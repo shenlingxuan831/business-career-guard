@@ -1,0 +1,10 @@
+workspace/
+.finance-security-guard/
+__pycache__/
+*.pyc
+*.log
+.env
+.env.*
+.DS_Store
+Thumbs.db
+

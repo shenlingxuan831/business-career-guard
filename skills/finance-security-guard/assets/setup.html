@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>金融保安 · 检查求职材料</title>
+  <style>
+    :root {
+      --bg:#d8d3ce; --surface:#f7f5f0; --panel:#fff; --ink:#20242b;
+      --muted:#6e7278; --line:#dfdbd4; --yellow:#ffd83d; --dark:#22262c;
+      --green:#277459; --red:#b84035; --orange:#9a6415; --soft:#efebe5;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; padding:28px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
+    button,input { font:inherit; }
+    button { color:inherit; }
+    .app { width:min(1120px,100%); min-height:calc(100vh - 56px); margin:auto; display:grid; grid-template-columns:224px minmax(0,1fr); overflow:hidden; border-radius:22px; background:var(--surface); box-shadow:0 18px 50px rgba(42,37,32,.13); }
+    aside { display:flex; flex-direction:column; padding:28px 22px; color:#fff; background:var(--dark); }
+    .brand { display:flex; align-items:center; gap:11px; font-size:19px; font-weight:850; }
+    .mark { width:40px; height:40px; display:grid; place-items:center; border-radius:50%; color:var(--dark); background:var(--yellow); }
+    .steps { display:grid; gap:17px; margin-top:44px; }
+    .step { display:flex; align-items:center; gap:10px; color:#989da3; font-size:13px; }
+    .step i { width:27px; height:27px; display:grid; place-items:center; border-radius:50%; font-style:normal; background:#343940; }
+    .step.active { color:#fff; font-weight:750; }
+    .step.active i,.step.done i { color:var(--dark); background:var(--yellow); }
+    .local { margin-top:auto; color:#b5b8bc; font-size:12px; line-height:1.65; }
+    main { padding:42px 48px; min-width:0; }
+    .eyebrow { color:#74787e; font-size:12px; font-weight:750; }
+    h1 { margin:8px 0 10px; font-size:34px; letter-spacing:0; }
+    .lead { max-width:700px; margin:0 0 26px; color:var(--muted); line-height:1.7; }
+    .promise { display:flex; flex-wrap:wrap; gap:16px; margin:-10px 0 26px; color:#555960; font-size:12px; }
+    .promise span::before { content:""; display:inline-block; width:7px; height:7px; margin-right:7px; border-radius:50%; background:var(--green); }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .task-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .task { min-height:132px; padding:18px; text-align:left; cursor:pointer; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .task:hover { border-color:#aaa49a; transform:translateY(-1px); }
+    .task small { display:block; margin-bottom:9px; color:#72767c; font-size:11px; font-weight:800; }
+    .task strong { display:block; margin-bottom:7px; font-size:17px; }
+    .task span { color:var(--muted); font-size:13px; line-height:1.55; }
+    .file-list { display:grid; gap:12px; }
+    .file-field { padding:17px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .file-head { display:flex; justify-content:space-between; gap:16px; margin-bottom:9px; }
+    .file-head b { font-size:15px; }
+    .required { color:var(--red); font-size:11px; font-weight:800; }
+    .optional { color:var(--muted); font-size:11px; }
+    .file-field p { margin:0 0 12px; color:var(--muted); font-size:12px; line-height:1.55; }
+    .file-field input[type=file] { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
+    .file-picker { display:inline-flex; align-items:center; min-height:38px; padding:0 15px; cursor:pointer; border:1px solid #b9b3aa; border-radius:19px; background:#faf9f6; font-size:13px; font-weight:750; }
+    .file-picker:hover { border-color:var(--dark); }
+    .chosen { margin-top:9px; color:#4f545a; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+    .notice { margin-top:14px; padding:14px 16px; border-left:4px solid var(--yellow); background:var(--soft); color:#555960; font-size:12px; line-height:1.6; }
+    .loading { min-height:310px; display:grid; place-items:center; text-align:center; }
+    .spinner { width:42px; height:42px; margin:0 auto 18px; border:4px solid #ddd8d0; border-top-color:var(--dark); border-radius:50%; animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .result-top { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:18px; padding:18px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .verdict { display:inline-flex; align-items:center; min-height:30px; padding:0 11px; border-radius:16px; font-size:12px; font-weight:850; }
+    .verdict.ready { color:var(--green); background:#e8f4ee; }
+    .verdict.review { color:var(--orange); background:#fff2d9; }
+    .verdict.blocked { color:var(--red); background:#fae9e6; }
+    .result-top h2 { margin:0 0 7px; font-size:22px; }
+    .result-top p { margin:0; color:var(--muted); font-size:13px; }
+    .result-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .result-section { min-width:0; padding:16px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .result-section.wide { grid-column:1 / -1; }
+    .result-section h3 { margin:0 0 12px; font-size:15px; }
+    .result-section ul { margin:0; padding-left:19px; color:#4f545a; font-size:12px; line-height:1.65; }
+    .result-section li + li { margin-top:5px; }
+    .empty { margin:0; color:var(--muted); font-size:12px; }
+    .fact { padding:9px 0; border-top:1px solid #eeeae4; }
+    .fact:first-of-type { padding-top:0; border-top:0; }
+    .fact p { margin:0 0 4px; color:#35393f; font-size:12px; line-height:1.55; }
+    .fact small { color:var(--muted); font-size:11px; }
+    .safety-note { margin-top:14px; padding:14px 16px; color:var(--green); border:1px solid #b9d9ca; border-radius:8px; background:#edf7f2; font-size:13px; }
+    .actions { display:flex; justify-content:space-between; gap:12px; margin-top:26px; }
+    .btn { min-height:42px; padding:0 18px; cursor:pointer; border:1px solid var(--line); border-radius:21px; background:#fff; font-weight:750; }
+    .btn.primary { margin-left:auto; border-color:var(--yellow); background:var(--yellow); }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+    .error { margin-top:12px; color:var(--red); font-size:13px; }
+    @media(max-width:760px) {
+      body { padding:0; }
+      .app { min-height:100vh; display:block; border-radius:0; }
+      aside { padding:17px 18px; }
+      .steps,.local { display:none; }
+      main { padding:27px 17px; }
+      h1 { font-size:27px; }
+      .task-grid,.result-grid { grid-template-columns:1fr; }
+      .result-section.wide { grid-column:auto; }
+      .result-top { display:block; }
+      .verdict { margin-top:13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand"><span class="mark">保</span>金融保安</div>
+      <div class="steps">
+        <div class="step active"><i>1</i>选择要做的事</div>
+        <div class="step"><i>2</i>选择材料</div>
+        <div class="step"><i>3</i>检查材料</div>
+        <div class="step"><i>4</i>查看结果</div>
+      </div>
+      <div class="local">文件只交给这台电脑上的本地服务检查。页面不会把材料发到招聘网站、邮箱或其他外部服务。</div>
+    </aside>
+    <main>
+      <div class="eyebrow" id="eyebrow">从一件具体的事开始</div>
+      <h1 id="title">你现在要做什么？</h1>
+      <p class="lead" id="lead">选一个最接近的情况。下一步直接选择文件，不需要先配置安全规则。</p>
+      <div class="promise">
+        <span>不修改原文件</span>
+        <span>不自动发送</span>
+        <span>看不懂的文件会明确告诉你</span>
+      </div>
+
+      <section class="panel active" data-step="0">
+        <div class="task-grid" id="taskGrid">
+          <button class="task" data-task="apply"><small>最常用</small><strong>申请一个岗位</strong><span>选择简历和岗位描述，先检查证据、隐私和缺失信息。</span></button>
+          <button class="task" data-task="interview"><small>收到面试后</small><strong>准备一场面试</strong><span>根据简历和岗位要求，确认哪些经历可以展开、哪些地方需要补证据。</span></button>
+          <button class="task" data-task="review"><small>材料比较乱时</small><strong>检查现有求职材料</strong><span>看看文件能否读取、有没有个人信息，以及材料还缺什么。</span></button>
+          <button class="task" data-task="portfolio"><small>准备发给别人时</small><strong>整理公开作品</strong><span>检查作品说明、研究样本或项目材料是否适合公开。</span></button>
+        </div>
+      </section>
+
+      <section class="panel" data-step="1">
+        <div class="file-list" id="fileFields"></div>
+        <div class="notice">PDF、DOCX 等文件会被保存并列入清单，但当前版本不会假装读过它们。需要分析正文时，请同时选择对应的 TXT 或 MD 文件。</div>
+      </section>
+
+      <section class="panel" data-step="2">
+        <div class="loading">
+          <div>
+            <div class="spinner"></div>
+            <h2>正在检查这批材料</h2>
+            <p class="lead">我们会先登记文件，再检查可读取内容中的个人信息、证据和缺失项。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" data-step="3">
+        <div id="result"></div>
+      </section>
+
+      <div class="error" id="error"></div>
+      <div class="actions">
+        <button class="btn" id="backBtn" disabled>返回</button>
+        <button class="btn primary" id="nextBtn" style="display:none">开始检查</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const taskDefinitions={
+      apply:{
+        title:"申请一个岗位",
+        lead:"选择这次申请要用的简历和岗位描述。补充材料可以稍后再加。",
+        fields:[
+          {id:"resume",role:"resume",label:"简历",required:true,multiple:false,help:"建议同时提供 TXT 或 MD 版本，便于核对经历证据。"},
+          {id:"jd",role:"jd",label:"岗位描述",required:true,multiple:false,help:"可以选择保存下来的招聘信息文本。"},
+          {id:"projects",role:"project",label:"项目或研究材料",required:false,multiple:true,help:"用于补充简历中的项目、报告或研究经历。"}
+        ]
+      },
+      interview:{
+        title:"准备一场面试",
+        lead:"先提供简历。岗位描述和已有面试笔记能让准备更具体。",
+        fields:[
+          {id:"resume",role:"resume",label:"简历",required:true,multiple:false,help:"面试回答只能使用简历和你提供的真实经历。"},
+          {id:"jd",role:"jd",label:"岗位描述",required:false,multiple:false,help:"没有也可以继续，但问题会更通用。"},
+          {id:"notes",role:"notes",label:"公司资料或面试笔记",required:false,multiple:true,help:"选择你已经整理好的文字材料。"}
+        ]
+      },
+      review:{
+        title:"检查现有求职材料",
+        lead:"一次选择多个文件。我们会分别说明哪些读到了、哪些暂时只能登记。",
+        fields:[
+          {id:"materials",role:"material",label:"求职材料",required:true,multiple:true,help:"可以包括简历、邮件草稿、项目说明和研究样本。"}
+        ]
+      },
+      portfolio:{
+        title:"整理公开作品",
+        lead:"选择准备发给别人或放到公开仓库的材料。个人信息和本机路径会按公开标准检查。",
+        fields:[
+          {id:"projects",role:"project",label:"准备公开的作品",required:true,multiple:true,help:"可以是研究样本、项目说明、代码说明或报告文本。"},
+          {id:"notes",role:"notes",label:"公开说明或补充文字",required:false,multiple:true,help:"用于说明作品背景，但不会被当作经历证明。"}
+        ]
+      }
+    };
+    const state={step:0,task:"",result:null};
+    const panels=[...document.querySelectorAll(".panel")];
+    const steps=[...document.querySelectorAll(".step")];
+    const title=document.getElementById("title");
+    const lead=document.getElementById("lead");
+    const eyebrow=document.getElementById("eyebrow");
+    const back=document.getElementById("backBtn");
+    const next=document.getElementById("nextBtn");
+    const errorBox=document.getElementById("error");
+
+    function escapeHtml(value){
+      return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]));
+    }
+
+    function setStep(step){
+      state.step=step;
+      panels.forEach((panel,index)=>panel.classList.toggle("active",index===step));
+      steps.forEach((item,index)=>{
+        item.classList.toggle("active",index===step);
+        item.classList.toggle("done",index<step);
+      });
+      back.disabled=step===0||step===2;
+      next.style.display=step===1?"block":"none";
+      errorBox.textContent="";
+      if(step===0){
+        eyebrow.textContent="从一件具体的事开始";
+        title.textContent="你现在要做什么？";
+        lead.textContent="选一个最接近的情况。下一步直接选择文件，不需要先配置安全规则。";
+      }else if(step===1){
+        eyebrow.textContent="选择本机文件";
+        title.textContent=taskDefinitions[state.task].title;
+        lead.textContent=taskDefinitions[state.task].lead;
+        updateNextState();
+      }else if(step===2){
+        eyebrow.textContent="只在本机处理";
+        title.textContent="正在检查";
+        lead.textContent="文件已经交给本地服务，当前不会发生上传、公开或发送。";
+      }else{
+        eyebrow.textContent="检查完成";
+        title.textContent="这批材料的检查结果";
+        lead.textContent="先处理阻断项和缺失信息，再继续生成或对外使用材料。";
+      }
+    }
+
+    function renderFields(){
+      const container=document.getElementById("fileFields");
+      container.innerHTML="";
+      for(const field of taskDefinitions[state.task].fields){
+        const wrapper=document.createElement("div");
+        wrapper.className="file-field";
+        wrapper.innerHTML=`
+          <div class="file-head">
+            <b>${escapeHtml(field.label)}</b>
+            <span class="${field.required?"required":"optional"}">${field.required?"必选":"可选"}</span>
+          </div>
+          <p>${escapeHtml(field.help)}</p>
+          <input id="file-${escapeHtml(field.id)}" type="file" ${field.multiple?"multiple":""} accept=".txt,.md,.csv,.json,.html,.htm,.pdf,.docx,.xlsx">
+          <label class="file-picker" for="file-${escapeHtml(field.id)}">${field.multiple?"选择一个或多个文件":"选择文件"}</label>
+          <div class="chosen" id="chosen-${escapeHtml(field.id)}">尚未选择文件</div>`;
+        container.appendChild(wrapper);
+        const input=wrapper.querySelector("input");
+        input.addEventListener("change",()=>{
+          const names=[...input.files].map(file=>file.name);
+          wrapper.querySelector(".chosen").textContent=names.length?names.join("、"):"尚未选择文件";
+          updateNextState();
+        });
+      }
+    }
+
+    function updateNextState(){
+      if(state.step!==1)return;
+      const fields=taskDefinitions[state.task].fields;
+      next.disabled=fields.some(field=>field.required&&!document.getElementById(`file-${field.id}`).files.length);
+    }
+
+    document.getElementById("taskGrid").addEventListener("click",event=>{
+      const button=event.target.closest(".task");
+      if(!button)return;
+      state.task=button.dataset.task;
+      renderFields();
+      setStep(1);
+    });
+
+    function readFile(file){
+      return new Promise((resolve,reject)=>{
+        if(file.size>6*1024*1024){
+          reject(new Error(`${file.name} 超过 6 MB，请压缩或提供文本版本。`));
+          return;
+        }
+        const reader=new FileReader();
+        reader.onload=()=>resolve(String(reader.result).split(",",2)[1]||"");
+        reader.onerror=()=>reject(new Error(`${file.name} 无法读取。`));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function collectFiles(){
+      const files=[];
+      for(const field of taskDefinitions[state.task].fields){
+        const selected=[...document.getElementById(`file-${field.id}`).files];
+        for(const file of selected){
+          files.push({name:file.name,role:field.role,content_base64:await readFile(file)});
+        }
+      }
+      return files;
+    }
+
+    function list(items,renderItem){
+      if(!items.length)return '<p class="empty">没有</p>';
+      return `<ul>${items.map(item=>`<li>${renderItem(item)}</li>`).join("")}</ul>`;
+    }
+
+    function renderResult(data){
+      const labels={READY:["可以继续","ready"],REVIEW:["需要你确认","review"],BLOCKED:["请先处理","blocked"]};
+      const verdict=labels[data.verdict]||["需要检查","review"];
+      const facts=data.evidence_facts||[];
+      document.getElementById("result").innerHTML=`
+        <div class="result-top">
+          <div><h2>${escapeHtml(taskDefinitions[data.task].title)}</h2><p>结果已保存到 ${escapeHtml(data.result_file||"本地输出目录")}</p></div>
+          <span class="verdict ${verdict[1]}">${verdict[0]}</span>
+        </div>
+        <div class="result-grid">
+          <section class="result-section">
+            <h3>已登记的文件</h3>
+            ${list(data.sources||[],item=>`${escapeHtml(item.name)} · ${item.readable?"已读取正文":"已保存，未读取正文"}`)}
+          </section>
+          <section class="result-section">
+            <h3>暂时无法读取</h3>
+            ${list(data.skipped||[],item=>`${escapeHtml(item.name)}：${escapeHtml(item.reason)}`)}
+          </section>
+          <section class="result-section">
+            <h3>个人信息与安全问题</h3>
+            ${list(data.privacy_findings||[],item=>`${escapeHtml(item.message)} <small>${escapeHtml(item.file)} 第 ${item.line} 行</small>`)}
+          </section>
+          <section class="result-section">
+            <h3>还缺什么</h3>
+            ${list(data.missing||[],item=>escapeHtml(item))}
+          </section>
+          <section class="result-section wide">
+            <h3>从材料中找到的可核对内容</h3>
+            ${facts.length?facts.map(item=>`<div class="fact"><p>${escapeHtml(item.text)}</p><small>${escapeHtml(item.source)} 第 ${item.line} 行</small></div>`).join(""):'<p class="empty">没有找到可安全展示的文本内容。系统不会补写不存在的经历。</p>'}
+          </section>
+          <section class="result-section wide">
+            <h3>接下来可以做</h3>
+            ${list(data.next_actions||[],item=>escapeHtml(item))}
+          </section>
+        </div>
+        <div class="safety-note">本次只完成本地登记与检查，没有上传到招聘网站、公开材料或发送邮件。</div>`;
+    }
+
+    async function runCheck(){
+      try{
+        next.disabled=true;
+        setStep(2);
+        const files=await collectFiles();
+        const response=await fetch("/api/tasks",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({task:state.task,files})
+        });
+        const data=await response.json();
+        if(!response.ok||!data.ok)throw new Error(data.error||"检查没有完成，请重试。");
+        state.result=data;
+        renderResult(data);
+        setStep(3);
+      }catch(error){
+        setStep(1);
+        errorBox.textContent=error.message;
+        updateNextState();
+      }
+    }
+
+    back.addEventListener("click",()=>{
+      if(state.step===1)setStep(0);
+      if(state.step===3)setStep(1);
+    });
+    next.addEventListener("click",runCheck);
+    setStep(0);
+  </script>
+</body>
+</html>
