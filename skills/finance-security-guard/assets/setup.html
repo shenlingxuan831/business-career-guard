@@ -12,7 +12,7 @@
     }
     * { box-sizing:border-box; }
     body { margin:0; min-height:100vh; padding:28px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
-    button,input { font:inherit; }
+    button,input,textarea { font:inherit; }
     button { color:inherit; }
     .app { width:min(1120px,100%); min-height:calc(100vh - 56px); margin:auto; display:grid; grid-template-columns:224px minmax(0,1fr); overflow:hidden; border-radius:22px; background:var(--surface); box-shadow:0 18px 50px rgba(42,37,32,.13); }
     aside { display:flex; flex-direction:column; padding:28px 22px; color:#fff; background:var(--dark); }
@@ -49,6 +49,11 @@
     .file-picker { display:inline-flex; align-items:center; min-height:38px; padding:0 15px; cursor:pointer; border:1px solid #b9b3aa; border-radius:19px; background:#faf9f6; font-size:13px; font-weight:750; }
     .file-picker:hover { border-color:var(--dark); }
     .chosen { margin-top:9px; color:#4f545a; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+    .or { display:flex; align-items:center; gap:10px; margin:14px 0; color:#8a8d91; font-size:11px; }
+    .or::before,.or::after { content:""; flex:1; height:1px; background:#ece8e2; }
+    .text-entry { width:100%; min-height:112px; resize:vertical; padding:12px 13px; color:var(--ink); border:1px solid #cfc9c0; border-radius:7px; background:#fcfbf8; line-height:1.55; }
+    .text-entry:focus { outline:2px solid rgba(39,116,89,.18); border-color:var(--green); }
+    .text-meta { display:flex; justify-content:space-between; gap:12px; margin-top:7px; color:var(--muted); font-size:11px; }
     .notice { margin-top:14px; padding:14px 16px; border-left:4px solid var(--yellow); background:var(--soft); color:#555960; font-size:12px; line-height:1.6; }
     .loading { min-height:310px; display:grid; place-items:center; text-align:center; }
     .spinner { width:42px; height:42px; margin:0 auto 18px; border:4px solid #ddd8d0; border-top-color:var(--dark); border-radius:50%; animation:spin .8s linear infinite; }
@@ -71,6 +76,26 @@
     .fact:first-of-type { padding-top:0; border-top:0; }
     .fact p { margin:0 0 4px; color:#35393f; font-size:12px; line-height:1.55; }
     .fact small { color:var(--muted); font-size:11px; }
+    .direction-box { display:grid; gap:10px; }
+    .direction-input { width:100%; min-height:44px; padding:10px 12px; color:var(--ink); border:1px solid #cfc9c0; border-radius:7px; background:#fcfbf8; font-weight:750; }
+    .direction-input:focus { outline:2px solid rgba(39,116,89,.18); border-color:var(--green); }
+    .direction-meta { display:flex; flex-wrap:wrap; gap:8px 16px; color:var(--muted); font-size:11px; line-height:1.55; }
+    .smtp-guide { margin-top:16px; overflow:hidden; border:1px solid #d8d4cb; border-radius:8px; background:#fbfaf7; }
+    .smtp-guide summary { padding:14px 16px; cursor:pointer; color:var(--ink); font-weight:800; list-style:none; }
+    .smtp-guide summary::-webkit-details-marker { display:none; }
+    .smtp-guide-body { padding:0 16px 16px; }
+    .smtp-guide-body > p { margin:0 0 12px; color:var(--muted); font-size:12px; line-height:1.6; }
+    .smtp-visual { display:grid; grid-template-columns:128px 1fr; min-height:176px; overflow:hidden; border:1px solid #d5dce7; border-radius:7px; background:#fff; }
+    .smtp-visual-nav { padding:12px 8px; background:#f3f7fd; border-right:1px solid #d5dce7; }
+    .smtp-visual-brand { margin:0 7px 10px; color:#c61d28; font-size:14px; font-weight:900; }
+    .smtp-visual-item { padding:8px 7px; color:#47556b; font-size:10px; }
+    .smtp-visual-item.active { color:#172947; background:#dce9ff; font-weight:800; }
+    .smtp-visual-main { padding:14px; }
+    .smtp-visual-main h4 { margin:0 0 12px; font-size:13px; }
+    .smtp-service { display:grid; grid-template-columns:1fr auto; gap:10px; padding:9px 0; border-bottom:1px solid #ebeef2; font-size:11px; }
+    .smtp-service strong { color:var(--green); }
+    .smtp-auth-hint { margin-top:11px; padding:9px; color:#6c5510; background:#fff6d5; border:1px solid #ead88b; border-radius:5px; font-size:10px; line-height:1.5; }
+    .smtp-steps { margin:12px 0 0; padding-left:20px; color:#4f545a; font-size:12px; line-height:1.65; }
     .safety-note { margin-top:14px; padding:14px 16px; color:var(--green); border:1px solid #b9d9ca; border-radius:8px; background:#edf7f2; font-size:13px; }
     .actions { display:flex; justify-content:space-between; gap:12px; margin-top:26px; }
     .btn { min-height:42px; padding:0 18px; cursor:pointer; border:1px solid var(--line); border-radius:21px; background:#fff; font-weight:750; }
@@ -88,6 +113,7 @@
       .result-section.wide { grid-column:auto; }
       .result-top { display:block; }
       .verdict { margin-top:13px; }
+      .smtp-visual { grid-template-columns:100px 1fr; }
     }
   </style>
 </head>
@@ -124,7 +150,7 @@
 
       <section class="panel" data-step="1">
         <div class="file-list" id="fileFields"></div>
-        <div class="notice">PDF、DOCX 等文件会被保存并列入清单，但当前版本不会假装读过它们。需要分析正文时，请同时选择对应的 TXT 或 MD 文件。</div>
+        <div class="notice">可以直接粘贴文字，也可以选择文件。PDF、DOCX 等文件会被保存并列入清单，但当前版本不会假装读过它们；需要分析正文时，请同时粘贴文字或提供 TXT/MD。</div>
       </section>
 
       <section class="panel" data-step="2">
@@ -153,35 +179,35 @@
     const taskDefinitions={
       apply:{
         title:"申请一个岗位",
-        lead:"选择这次申请要用的简历和岗位描述。补充材料可以稍后再加。",
+        lead:"上传文件或直接粘贴文字。简历和岗位描述会分别登记，不会互相冒充事实。",
         fields:[
-          {id:"resume",role:"resume",label:"简历",required:true,multiple:false,help:"建议同时提供 TXT 或 MD 版本，便于核对经历证据。"},
-          {id:"jd",role:"jd",label:"岗位描述",required:true,multiple:false,help:"可以选择保存下来的招聘信息文本。"},
-          {id:"projects",role:"project",label:"项目或研究材料",required:false,multiple:true,help:"用于补充简历中的项目、报告或研究经历。"}
+          {id:"resume",role:"resume",label:"简历",required:true,multiple:false,help:"选择简历文件，或粘贴可读取的简历文字。",placeholder:"粘贴简历正文，例如教育背景、实习、项目和可实习时间。"},
+          {id:"jd",role:"jd",label:"岗位描述",required:true,multiple:false,help:"选择保存下来的招聘信息，或直接粘贴完整 JD。",placeholder:"粘贴岗位职责、任职要求、投递方式等岗位信息。"},
+          {id:"projects",role:"project",label:"项目或行研参考资料",required:false,multiple:true,help:"用于补充项目证据，并生成一份可核对的行研参考资料清单。",placeholder:"粘贴行业数据、公司资料、研究笔记、来源说明或已有结论。"}
         ]
       },
       interview:{
         title:"准备一场面试",
         lead:"先提供简历。岗位描述和已有面试笔记能让准备更具体。",
         fields:[
-          {id:"resume",role:"resume",label:"简历",required:true,multiple:false,help:"面试回答只能使用简历和你提供的真实经历。"},
-          {id:"jd",role:"jd",label:"岗位描述",required:false,multiple:false,help:"没有也可以继续，但问题会更通用。"},
-          {id:"notes",role:"notes",label:"公司资料或面试笔记",required:false,multiple:true,help:"选择你已经整理好的文字材料。"}
+          {id:"resume",role:"resume",label:"简历",required:true,multiple:false,help:"面试回答只能使用简历和你提供的真实经历。",placeholder:"粘贴简历正文。"},
+          {id:"jd",role:"jd",label:"岗位描述",required:false,multiple:false,help:"没有也可以继续，但问题会更通用。",placeholder:"粘贴岗位描述。"},
+          {id:"notes",role:"notes",label:"公司资料或面试笔记",required:false,multiple:true,help:"选择文件或粘贴你已经整理好的文字材料。",placeholder:"粘贴公司资料、面试记录或行业研究笔记。"}
         ]
       },
       review:{
         title:"检查现有求职材料",
         lead:"一次选择多个文件。我们会分别说明哪些读到了、哪些暂时只能登记。",
         fields:[
-          {id:"materials",role:"material",label:"求职材料",required:true,multiple:true,help:"可以包括简历、邮件草稿、项目说明和研究样本。"}
+          {id:"materials",role:"material",label:"求职材料",required:true,multiple:true,help:"可以包括简历、邮件草稿、项目说明和研究样本。",placeholder:"粘贴需要检查的求职材料正文。"}
         ]
       },
       portfolio:{
         title:"整理公开作品",
         lead:"选择准备发给别人或放到公开仓库的材料。个人信息和本机路径会按公开标准检查。",
         fields:[
-          {id:"projects",role:"project",label:"准备公开的作品",required:true,multiple:true,help:"可以是研究样本、项目说明、代码说明或报告文本。"},
-          {id:"notes",role:"notes",label:"公开说明或补充文字",required:false,multiple:true,help:"用于说明作品背景，但不会被当作经历证明。"}
+          {id:"projects",role:"project",label:"准备公开的作品",required:true,multiple:true,help:"可以是研究样本、项目说明、代码说明或报告文本。",placeholder:"粘贴准备公开的作品正文。"},
+          {id:"notes",role:"notes",label:"公开说明或补充文字",required:false,multiple:true,help:"用于说明作品背景，但不会被当作经历证明。",placeholder:"粘贴公开说明或补充文字。"}
         ]
       }
     };
@@ -214,7 +240,7 @@
         title.textContent="你现在要做什么？";
         lead.textContent="选一个最接近的情况。下一步直接选择文件，不需要先配置安全规则。";
       }else if(step===1){
-        eyebrow.textContent="选择本机文件";
+        eyebrow.textContent="上传文件或粘贴文字";
         title.textContent=taskDefinitions[state.task].title;
         lead.textContent=taskDefinitions[state.task].lead;
         updateNextState();
@@ -243,12 +269,20 @@
           <p>${escapeHtml(field.help)}</p>
           <input id="file-${escapeHtml(field.id)}" type="file" ${field.multiple?"multiple":""} accept=".txt,.md,.csv,.json,.html,.htm,.pdf,.docx,.xlsx">
           <label class="file-picker" for="file-${escapeHtml(field.id)}">${field.multiple?"选择一个或多个文件":"选择文件"}</label>
-          <div class="chosen" id="chosen-${escapeHtml(field.id)}">尚未选择文件</div>`;
+          <div class="chosen" id="chosen-${escapeHtml(field.id)}">尚未选择文件</div>
+          <div class="or">或者直接粘贴文字</div>
+          <textarea class="text-entry" id="text-${escapeHtml(field.id)}" maxlength="120000" placeholder="${escapeHtml(field.placeholder||"粘贴文字内容")}"></textarea>
+          <div class="text-meta"><span>文字只保存在当前本地工作区</span><span id="count-${escapeHtml(field.id)}">0 字</span></div>`;
         container.appendChild(wrapper);
         const input=wrapper.querySelector("input");
         input.addEventListener("change",()=>{
           const names=[...input.files].map(file=>file.name);
           wrapper.querySelector(".chosen").textContent=names.length?names.join("、"):"尚未选择文件";
+          updateNextState();
+        });
+        const textarea=wrapper.querySelector("textarea");
+        textarea.addEventListener("input",()=>{
+          wrapper.querySelector(`#count-${field.id}`).textContent=`${textarea.value.trim().length} 字`;
           updateNextState();
         });
       }
@@ -257,7 +291,11 @@
     function updateNextState(){
       if(state.step!==1)return;
       const fields=taskDefinitions[state.task].fields;
-      next.disabled=fields.some(field=>field.required&&!document.getElementById(`file-${field.id}`).files.length);
+      next.disabled=fields.some(field=>{
+        const hasFile=document.getElementById(`file-${field.id}`).files.length>0;
+        const hasText=document.getElementById(`text-${field.id}`).value.trim().length>0;
+        return field.required&&!hasFile&&!hasText;
+      });
     }
 
     document.getElementById("taskGrid").addEventListener("click",event=>{
@@ -288,6 +326,17 @@
         for(const file of selected){
           files.push({name:file.name,role:field.role,content_base64:await readFile(file)});
         }
+        const pasted=document.getElementById(`text-${field.id}`).value.trim();
+        if(pasted){
+          const bytes=new TextEncoder().encode(pasted);
+          let binary="";
+          bytes.forEach(byte=>binary+=String.fromCharCode(byte));
+          files.push({
+            name:`${field.id}-pasted.txt`,
+            role:field.role,
+            content_base64:btoa(binary)
+          });
+        }
       }
       return files;
     }
@@ -301,12 +350,54 @@
       const labels={READY:["可以继续","ready"],REVIEW:["需要你确认","review"],BLOCKED:["请先处理","blocked"]};
       const verdict=labels[data.verdict]||["需要检查","review"];
       const facts=data.evidence_facts||[];
+      const direction=data.interview_direction||{};
+      const smtpGuide=data.task==="apply"?`
+        <details class="smtp-guide">
+          <summary>准备邮件投递时，怎样安全获取 163 SMTP 授权码？</summary>
+          <div class="smtp-guide-body">
+            <p>下面根据真实网易邮箱设置页面重绘并脱敏。它只帮助你找到授权入口，不会要求或保存授权码。</p>
+            <div class="smtp-visual" role="img" aria-label="网易邮箱设置页示意，左侧选中 POP3 SMTP IMAP，右侧显示 IMAP SMTP 服务已开启">
+              <div class="smtp-visual-nav">
+                <div class="smtp-visual-brand">163 网易邮箱</div>
+                <div class="smtp-visual-item">常规设置</div>
+                <div class="smtp-visual-item">邮箱安全设置</div>
+                <div class="smtp-visual-item active">POP3/SMTP/IMAP</div>
+                <div class="smtp-visual-item">文件夹和标签</div>
+              </div>
+              <div class="smtp-visual-main">
+                <h4>POP3/SMTP/IMAP</h4>
+                <div class="smtp-service"><span>IMAP/SMTP 服务</span><strong>已开启</strong></div>
+                <div class="smtp-service"><span>POP3/SMTP 服务</span><span>按需开启</span></div>
+                <div class="smtp-auth-hint"><strong>授权密码管理</strong><br>生成第三方客户端专用授权码。</div>
+              </div>
+            </div>
+            <ol class="smtp-steps">
+              <li>登录网易邮箱，进入“设置”。</li>
+              <li>选择“POP3/SMTP/IMAP”，开启“IMAP/SMTP 服务”。</li>
+              <li>在“授权密码管理”中生成客户端授权码，只在真实发送页面当次填写。</li>
+            </ol>
+          </div>
+        </details>`:"";
       document.getElementById("result").innerHTML=`
         <div class="result-top">
           <div><h2>${escapeHtml(taskDefinitions[data.task].title)}</h2><p>结果已保存到 ${escapeHtml(data.result_file||"本地输出目录")}</p></div>
           <span class="verdict ${verdict[1]}">${verdict[0]}</span>
         </div>
         <div class="result-grid">
+          <section class="result-section wide">
+            <h3>系统为你填写的面试方向</h3>
+            <div class="direction-box">
+              <input class="direction-input" id="directionInput" value="${escapeHtml(direction.label||"待提供 JD 后自动识别面试方向")}" aria-label="面试方向">
+              <div class="direction-meta">
+                <span>机构：${escapeHtml(direction.institution||"待确认")}</span>
+                <span>行业：${escapeHtml(direction.sector||"待确认")}</span>
+                <span>重点：${escapeHtml(direction.focus||"待确认")}</span>
+                <span>建议作品：${escapeHtml(direction.recommended_deliverable||"证据化小型行研")}</span>
+                <span>识别置信度：${escapeHtml(direction.confidence||"low")}</span>
+              </div>
+              <p class="empty">方向来自岗位描述，只是可编辑建议，不会被写成你的个人经历。修改后会保存在当前浏览器中，后续生成面试作品时应以确认后的方向为准。</p>
+            </div>
+          </section>
           <section class="result-section">
             <h3>已登记的文件</h3>
             ${list(data.sources||[],item=>`${escapeHtml(item.name)} · ${item.readable?"已读取正文":"已保存，未读取正文"}`)}
@@ -328,11 +419,25 @@
             ${facts.length?facts.map(item=>`<div class="fact"><p>${escapeHtml(item.text)}</p><small>${escapeHtml(item.source)} 第 ${item.line} 行</small></div>`).join(""):'<p class="empty">没有找到可安全展示的文本内容。系统不会补写不存在的经历。</p>'}
           </section>
           <section class="result-section wide">
+            <h3>行研参考资料</h3>
+            ${(data.research_references||[]).length
+              ? `${list(data.research_references,item=>`<b>${escapeHtml(item.name)}</b> · ${escapeHtml(item.role_label)} · 可核对片段 ${item.excerpt_count} 条`)}
+                 <p class="empty">参考资料清单已保存到 ${escapeHtml(data.research_reference_file||"本地输出目录")}。这些材料只作为研究输入，不会自动变成候选人经历或确定性结论。</p>`
+              : '<p class="empty">这次没有读取到项目、公司资料或行研笔记。上传文件或粘贴文字后，会生成独立的参考资料清单和小型行研写作框架。</p>'}
+          </section>
+          <section class="result-section wide">
             <h3>接下来可以做</h3>
             ${list(data.next_actions||[],item=>escapeHtml(item))}
           </section>
         </div>
+        ${smtpGuide}
         <div class="safety-note">本次只完成本地登记与检查，没有上传到招聘网站、公开材料或发送邮件。</div>`;
+      const directionInput=document.getElementById("directionInput");
+      const savedDirection=localStorage.getItem(`finance-guard-direction-${data.task_id}`);
+      if(savedDirection)directionInput.value=savedDirection;
+      directionInput.addEventListener("input",()=>{
+        localStorage.setItem(`finance-guard-direction-${data.task_id}`,directionInput.value.trim());
+      });
     }
 
     async function runCheck(){

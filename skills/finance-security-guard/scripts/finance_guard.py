@@ -151,6 +151,114 @@ def evidence_excerpts(path: Path, text: str, role: str, workspace_root: Path) ->
     return excerpts
 
 
+def infer_interview_direction(jd_text: str, task: str) -> dict:
+    text = jd_text.lower()
+    institution_rules = [
+        ("卖方研究", r"证券|研究所|卖方|研究员|财报点评|事件点评|会议纪要"),
+        ("买方研究", r"基金|资管|投资经理|买方|组合|持仓|投研"),
+        ("产业研究", r"产业研究|战略研究|行业研究|咨询|市场研究"),
+        ("金融 AI", r"金融.?ai|大模型|智能投研|知识图谱|模型评测|数据抽取"),
+        ("量化研究", r"量化|因子|回测|策略研究|高频|衍生品"),
+    ]
+    sector_rules = [
+        ("消费 / 轻工", r"轻工|消费|家居|造纸|包装|文具|零售|食品|纺服|美妆"),
+        ("医药医疗", r"医药|医疗|生物|创新药|器械|医院|临床"),
+        ("先进制造", r"制造|机械|汽车|新能源|电力设备|军工|机器人|工业"),
+        ("TMT / 互联网科技", r"tmt|互联网|传媒|科技|软件行业|软件开发|半导体|计算机组|通信组|游戏"),
+        ("金融地产", r"银行|非银|保险|地产|房地产|金融"),
+        ("周期资源", r"化工|有色|煤炭|钢铁|石油|建材|资源"),
+        ("宏观与策略", r"宏观|策略|大类资产|利率|汇率|固收"),
+    ]
+    focus_rules = [
+        ("行业研究与资料整理", r"资料收集|数据整理|数据库|行业研究|研究支持"),
+        ("财务模型与公司研究", r"财务模型|估值|盈利预测|公司研究|财务分析"),
+        ("财报与事件点评", r"财报点评|事件点评|公告|业绩"),
+        ("调研与会议纪要", r"调研|会议纪要|电话会议|录音"),
+        ("量化建模与数据分析", r"量化|回测|因子|建模|python|数据分析"),
+    ]
+
+    def choose(rules: list[tuple[str, str]], fallback: str) -> tuple[str, str | None]:
+        for label, pattern in rules:
+            match = re.search(pattern, text, re.I)
+            if match:
+                return label, match.group(0)
+        return fallback, None
+
+    institution, institution_hit = choose(institution_rules, "金融研究")
+    sector, sector_hit = choose(sector_rules, "待确认的行业方向")
+    focus, focus_hit = choose(focus_rules, "研究基础能力")
+    deliverable = {
+        "卖方研究": "小型行业研究 + 3 分钟面试陈述",
+        "买方研究": "投资观点卡 + 风险与反证清单",
+        "产业研究": "产业链与竞争格局简报",
+        "金融 AI": "可复现研究工作流 + 局限说明",
+        "量化研究": "研究假设 + 数据与回测说明",
+        "金融研究": "证据化小型行研 + 面试问答",
+    }[institution]
+    hits = [value for value in (institution_hit, sector_hit, focus_hit) if value]
+    confidence = "high" if len(hits) >= 3 else "medium" if len(hits) >= 1 else "low"
+    label = f"{institution} · {sector} · {focus}"
+    if task == "review" and not jd_text.strip():
+        label = "待提供 JD 后自动识别面试方向"
+    return {
+        "label": label,
+        "institution": institution,
+        "sector": sector,
+        "focus": focus,
+        "recommended_deliverable": deliverable,
+        "confidence": confidence,
+        "basis": hits,
+        "source": "job_description" if jd_text.strip() else "fallback",
+        "editable": True,
+    }
+
+
+def write_research_reference_report(
+    task: str,
+    references: list[dict],
+    output_dir: Path,
+    task_id: str,
+) -> Path | None:
+    if not references:
+        return None
+    role_labels = {"project": "项目或研究材料", "notes": "公司资料或研究笔记", "material": "求职材料"}
+    lines = [
+        "# 行研参考资料清单",
+        "",
+        f"- 任务：{task}",
+        f"- 可读取参考资料：{len(references)} 份",
+        "- 使用边界：以下内容是研究输入，不自动构成候选人经历，也不代表已经验证的投资结论。",
+        "",
+        "## 已读取资料",
+        "",
+    ]
+    for index, item in enumerate(references, 1):
+        lines.extend([
+            f"### {index}. {item['name']}",
+            "",
+            f"- 类型：{role_labels.get(item['role'], item['role'])}",
+            f"- 来源：`{item['source']}`",
+            f"- 可核对片段：{item['excerpt_count']} 条",
+            "",
+        ])
+        for excerpt in item["excerpts"]:
+            lines.append(f"- 第 {excerpt['line']} 行：{excerpt['text']}")
+        lines.append("")
+    lines.extend([
+        "## 小型行研写作框架",
+        "",
+        "1. 研究问题：明确行业、公司或事件，以及这份材料要回答的问题。",
+        "2. 事实底稿：逐条标注数据、公告、访谈或公开资料来源和日期。",
+        "3. 核心判断：把事实、推断和待验证假设分开。",
+        "4. 驱动与风险：说明什么会支持结论，什么情况会推翻结论。",
+        "5. 面试表达：用“问题—方法—证据—结论—局限”讲清本人做了什么。",
+        "",
+    ])
+    target = output_dir / f"{task_id}.research-references.md"
+    target.write_text("\n".join(lines), encoding="utf-8")
+    return target
+
+
 def task_missing(task: str, readable_by_role: dict[str, list[str]], all_candidate_text: str) -> list[str]:
     missing = []
     if task == "apply":
@@ -188,6 +296,7 @@ def analyze_task(task: str, files: list[dict], workspace_root: Path, task_id: st
     skipped = []
     privacy_findings = []
     evidence_facts = []
+    research_references = []
     readable_by_role: dict[str, list[str]] = {}
     candidate_texts = []
 
@@ -218,9 +327,24 @@ def analyze_task(task: str, files: list[dict], workspace_root: Path, task_id: st
         if role != "jd":
             candidate_texts.append(text)
         privacy_findings.extend(task_privacy_findings(path, text, role, task, workspace_root))
-        evidence_facts.extend(evidence_excerpts(path, text, role, workspace_root))
+        excerpts = evidence_excerpts(path, text, role, workspace_root)
+        evidence_facts.extend(excerpts)
+        if role in {"project", "notes", "material"}:
+            research_references.append({
+                "name": source["name"],
+                "role": role,
+                "role_label": {
+                    "project": "项目或研究材料",
+                    "notes": "公司资料或研究笔记",
+                    "material": "求职材料",
+                }[role],
+                "source": displayed_path,
+                "excerpt_count": len(excerpts),
+                "excerpts": excerpts[:5],
+            })
 
     missing = task_missing(task, readable_by_role, "\n".join(candidate_texts))
+    interview_direction = infer_interview_direction("\n".join(readable_by_role.get("jd", [])), task)
     severity_rank = {"critical": 4, "high": 3, "medium": 2, "low": 1}
     highest = max((severity_rank[item["severity"]] for item in privacy_findings), default=0)
     verdict = "BLOCKED" if highest >= 3 else "REVIEW" if privacy_findings or skipped or missing else "READY"
@@ -238,12 +362,18 @@ def analyze_task(task: str, files: list[dict], workspace_root: Path, task_id: st
         "privacy_findings": privacy_findings,
         "evidence_facts": evidence_facts,
         "missing": missing,
+        "interview_direction": interview_direction,
         "verdict": verdict,
         "next_actions": next_actions,
         "external_action": "NONE",
     }
     output_dir = workspace_root / "workspace" / "40_outputs"
     output_dir.mkdir(parents=True, exist_ok=True)
+    research_reference_path = write_research_reference_report(task, research_references, output_dir, task_id)
+    result["research_references"] = research_references
+    result["research_reference_file"] = (
+        relative_display(research_reference_path, workspace_root) if research_reference_path else None
+    )
     output_path = output_dir / f"{task_id}.check.json"
     output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     result["result_file"] = relative_display(output_path, workspace_root)
@@ -456,7 +586,7 @@ def selftest() -> dict:
         task_resume = task_root / "resume.txt"
         task_resume.write_text("某大学 金融学\n研究项目：整理行业数据并撰写报告\n每周可实习四天\n", encoding="utf-8")
         task_jd = task_root / "jd.txt"
-        task_jd.write_text("岗位要求：研究能力\n招聘邮箱：hiring@" + "company.test\n", encoding="utf-8")
+        task_jd.write_text("证券研究所岗位要求：研究能力\n招聘邮箱：hiring@" + "company.test\n", encoding="utf-8")
         task_result = analyze_task("apply", [
             {"path": str(task_resume), "name": "resume.txt", "role": "resume"},
             {"path": str(task_jd), "name": "jd.txt", "role": "jd"},
@@ -465,6 +595,35 @@ def selftest() -> dict:
             raise ValueError("selftest: recruiting email should require review, not block")
         if not task_result["evidence_facts"]:
             raise ValueError("selftest: readable candidate evidence was not collected")
+        if task_result["interview_direction"]["institution"] != "卖方研究":
+            raise ValueError("selftest: sell-side interview direction was not inferred")
+        if task_result["interview_direction"]["sector"] != "待确认的行业方向":
+            raise ValueError("selftest: unsupported sector should remain unconfirmed")
+
+        light_industry_jd = task_root / "light-industry-jd.txt"
+        light_industry_jd.write_text(
+            "证券研究所轻工组实习，协助行业研究、资料收集、数据整理和数据库维护，熟练使用 Microsoft Office 软件。\n",
+            encoding="utf-8",
+        )
+        direction_result = analyze_task("interview", [
+            {"path": str(task_resume), "name": "resume.txt", "role": "resume"},
+            {"path": str(light_industry_jd), "name": "light-industry-jd.txt", "role": "jd"},
+        ], task_root, "test-direction")
+        direction = direction_result["interview_direction"]
+        if direction["institution"] != "卖方研究" or direction["sector"] != "消费 / 轻工":
+            raise ValueError("selftest: light-industry sell-side direction was not inferred")
+
+        research_note = task_root / "research-note.txt"
+        research_note.write_text("行业需求来自公开公告，后续需要核对收入增速与竞争格局。\n", encoding="utf-8")
+        research_result = analyze_task("apply", [
+            {"path": str(task_resume), "name": "resume.txt", "role": "resume"},
+            {"path": str(task_jd), "name": "jd.txt", "role": "jd"},
+            {"path": str(research_note), "name": "research-note.txt", "role": "project"},
+        ], task_root, "test-research")
+        if not research_result["research_references"]:
+            raise ValueError("selftest: research reference was not collected")
+        if not Path(task_root / research_result["research_reference_file"]).is_file():
+            raise ValueError("selftest: research reference report was not created")
 
         binary_resume = task_root / "resume.pdf"
         binary_resume.write_bytes(b"%PDF-1.4 fixture")
@@ -482,7 +641,7 @@ def selftest() -> dict:
         ], task_root, "test-public")
         if public_result["verdict"] != "BLOCKED":
             raise ValueError("selftest: local path in public material was not blocked")
-    return {"verdict": "READY", "tests": 9, "message": "Finance guard selftest passed."}
+    return {"verdict": "READY", "tests": 11, "message": "Finance guard selftest passed."}
 
 
 def write_result(result: dict, output: str | None) -> None:

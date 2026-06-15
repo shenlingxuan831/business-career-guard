@@ -75,9 +75,9 @@ Start it as a hidden background process when needed and open the printed localho
 - `review`: one or more existing job-search materials;
 - `portfolio`: one or more materials intended for public sharing.
 
-Use file-selection controls. Do not ask users to paste local paths or choose a security level. The task determines the safety policy automatically.
+Support both file-selection controls and direct text input for resumes, job descriptions, research notes, and other readable material. Do not ask users to paste local paths or choose a security level. Directly entered text must be saved as a local source artifact and pass through the same evidence and privacy checks as uploaded text files. The task determines the safety policy automatically.
 
-The local `POST /api/tasks` response contains `task`, `sources`, `skipped`, `privacy_findings`, `evidence_facts`, `missing`, `verdict`, and `next_actions`. It must also state that no external action occurred.
+The local `POST /api/tasks` response contains `task`, `sources`, `skipped`, `privacy_findings`, `evidence_facts`, `research_references`, `research_reference_file`, `interview_direction`, `missing`, `verdict`, and `next_actions`. Infer the interview direction from the JD across institution type, sector, capability focus, and recommended interview deliverable. Present it as an editable suggestion with confidence and evidence basis; never derive it from generated copy or turn it into candidate experience. When readable project, company, or research notes are supplied, create a separate research-reference ledger and a small-research writing framework. It must also state that no external action occurred.
 
 Legacy `<current-project>/.finance-security-guard/config.json` remains readable for command-line compatibility, but it is not part of the new-user flow.
 
